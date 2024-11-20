@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "439104243343",
+    "project_id": "flashkart-72544",
+    "storage_bucket": "flashkart-72544.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439104243343:android:311a5ee77214d90b6c52fa",
+        "android_client_info": {
+          "package_name": "com.example.flashkart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUUlLA-v2JE6mI3TP0Um8O1D7RAcm3fa4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
