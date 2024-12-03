@@ -1,5 +1,6 @@
 package com.example.flashkart.ui
 
+import android.app.AlertDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -30,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,8 +42,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.flashkart.data.InternetItem
 import com.google.firebase.auth.FirebaseAuth
-import com.example.flashkart.R
-import kotlin.concurrent.timerTask
 
 enum class FlashAppScreen(val title: String) {
     Start("FlashCart"),
@@ -51,7 +50,7 @@ enum class FlashAppScreen(val title: String) {
 }
 
 var canNavigateBack = false
-//val auth = FirebaseAuth.getInstance()
+val auth = FirebaseAuth.getInstance()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +58,9 @@ fun FlashApp(
     flashViewModel: FlashViewModel = viewModel(),
     navController: NavHostController = rememberNavController()
     ) {
+    val user by flashViewModel.user.collectAsState()
+    flashViewModel.setUser(auth.currentUser)
+    val logoutClicked by flashViewModel.logoutClicked.collectAsState()
     val isVisible by flashViewModel.isVisible.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentScreen = FlashAppScreen.valueOf(
@@ -70,6 +72,9 @@ fun FlashApp(
 
     if(isVisible){
         OfferScreen()
+    }
+    else if (user == null){
+        LoginUi(flashViewModel = flashViewModel)
     }
     else{
         Scaffold(
@@ -97,10 +102,25 @@ fun FlashApp(
                                     )
                                 }
                             }
+                            Row(
+                                modifier = Modifier.clickable {
+                                    flashViewModel.setLogoutStatus(true)
+                                }
+                            ) {
+                                Icon(painter = painterResource(id = com.example.flashkart.R.drawable.logout), contentDescription = "Logout",
+                                    modifier = Modifier.size(24.dp))
+                                Text(text = "Logout",
+                                    fontSize = 18.sp,
+                                    modifier = Modifier.padding(
+                                        end = 14.dp,
+                                        start = 4.dp
+                                    )
+                                )
+                            }
                         }
                     },
                     navigationIcon = {
-                        if (com.example.flashkart.ui.canNavigateBack) {
+                        if (canNavigateBack) {
                             IconButton(onClick = { navController.navigateUp() }) {
                                 Icon(
                                     imageVector = Icons.Filled.ArrowBack, // Use the correct icon here
@@ -117,7 +137,7 @@ fun FlashApp(
         ) {
             NavHost(
                 navController = navController,
-                startDestination = com.example.flashkart.ui.FlashAppScreen.Start.name,
+                startDestination = FlashAppScreen.Start.name,
                 modifier = Modifier.padding(it)
             ) {
                 composable(route = FlashAppScreen.Start.name) {
@@ -143,11 +163,22 @@ fun FlashApp(
                         }
                     )
                 }
+                if(logoutClicked){
+                    AlertCheck(
+                        onYesButtonPressed = {
+                            flashViewModel.setLogoutStatus(false)
+                            auth.signOut()
+                            flashViewModel.clearData()
+                        },
+                        onNoButtonPressed = {
+                            flashViewModel.setLogoutStatus(false)
+                        }
+                    )
+                }
             }
         }
     }
 }
-
 
 @Composable
 fun FlashAppBar(navController: NavHostController,
@@ -172,8 +203,7 @@ fun FlashAppBar(navController: NavHostController,
             }
 
         ) {
-            Icon(imageVector = Icons.Outlined.Home, contentDescription = "Home" +
-                    "")
+            Icon(imageVector = Icons.Outlined.Home, contentDescription = "Home")
             Text(text = "Home", fontSize = 10.sp)
         }
         Column(
@@ -208,5 +238,31 @@ fun FlashAppBar(navController: NavHostController,
             }
             Text(text = "Cart", fontSize = 10.sp)
         }
+    }
+}
+
+@Composable
+fun AlertCheck(
+    onYesButtonPressed: () -> Unit,
+    onNoButtonPressed: () -> Unit
+){
+    AlertDialog(title = {
+        Text(text = "Logout?", fontWeight = FontWeight.Bold)
+        },
+        containerColor = Color.White,
+        text = {
+            Text(text = "Are you sure you want to logout?")
+        },
+        confirmButton = {
+            TextButton(onClick = {onYesButtonPressed}) {
+                Text(text = "Yes")
+            }
+        },
+        dismissButton = {
+            TextButton (onClick = {onNoButtonPressed}) {
+                Text(text = "No")
+            }
+        }) {
+
     }
 }

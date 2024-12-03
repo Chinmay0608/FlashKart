@@ -16,8 +16,8 @@ object DataSource {
             Categories(R.string.pet_food, R.drawable.pet),
             Categories(R.string.sweet_tooth, R.drawable.sweet),
             Categories(R.string.vegetables, R.drawable.vegetables),
-            Categories(R.string.beverages, R.drawable.beverages),
-            Categories(R.string.games, R.drawable.games)
+            Categories(R.string.beverages, R.drawable.beverages)
+
 
         )
     }

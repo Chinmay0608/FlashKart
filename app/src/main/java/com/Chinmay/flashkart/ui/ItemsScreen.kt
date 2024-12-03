@@ -38,11 +38,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.flashkart.R
+import com.example.flashkart.data.Item
 import com.example.flashkart.data.InternetItem
+import com.example.flashkart.data.DataSource
+import com.example.flashkart.network.FlashApi
 
 @Composable
 fun ItemsScreen(flashViewModel: FlashViewModel,
-                items: List<InternetItem>){
+                items: List<InternetItem>
+){
     val flashUiState by flashViewModel.uiState.collectAsState()
     val selectedCategory = stringResource(id = flashUiState.selectedCategory)
     val database = items.filter{
@@ -87,15 +91,13 @@ fun ItemsScreen(flashViewModel: FlashViewModel,
 }
 
 @Composable
-fun InternetItemsScreen(flashViewModel: FlashViewModel,
-    itemUiState: FlashViewModel.ItemUiState
-){
-    when(itemUiState) {
+fun InternetItemsScreen(flashViewModel: FlashViewModel, itemUiState: FlashViewModel.ItemUiState) {
+    when (itemUiState) {
         is FlashViewModel.ItemUiState.Loading -> {
             LoadingScreen()
         }
         is FlashViewModel.ItemUiState.Success -> {
-            ItemsScreen(flashViewModel, itemUiState.items)
+            ItemsScreen(flashViewModel = flashViewModel, items = itemUiState.items )
         }
         else -> {
             ErrorScreen(flashViewModel = flashViewModel)
@@ -186,7 +188,7 @@ fun ItemCard(
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally)
                 .clickable {
-                    flashViewModel.addToCart(
+                    flashViewModel.addToDatabase(
                         InternetItem(
                             itemName = stringResourceId,
                             imageUrl = imageResourceId,

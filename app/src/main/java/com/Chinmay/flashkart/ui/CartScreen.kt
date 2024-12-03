@@ -171,7 +171,7 @@ fun CartCard(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth())
             Card(modifier =Modifier.clickable{
-                flashViewModel.removeFromCart(item = cartItem)
+                flashViewModel.removeFromCart(oldItem = cartItem)
             }
                 .fillMaxWidth(),
                 colors = CardDefaults.cardColors(

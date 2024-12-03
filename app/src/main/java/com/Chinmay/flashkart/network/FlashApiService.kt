@@ -7,7 +7,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import retrofit2.http.GET
 
-//private const val BASE_URL = "https://training-uploads.internshala.com"
+private const val BASE_URL = "https://training-uploads.internshala.com"
 private val retrofit = Retrofit.Builder()
     .addConverterFactory(
         Json.asConverterFactory(
