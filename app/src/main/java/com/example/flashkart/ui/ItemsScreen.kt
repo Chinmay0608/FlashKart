@@ -38,10 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.flashkart.R
-import com.example.flashkart.data.Item
 import com.example.flashkart.data.InternetItem
-import com.example.flashkart.data.DataSource
-import com.example.flashkart.network.FlashApi
 
 @Composable
 fun ItemsScreen(flashViewModel: FlashViewModel,

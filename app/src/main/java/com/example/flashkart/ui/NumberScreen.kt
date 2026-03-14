@@ -1,6 +1,5 @@
 package com.example.flashkart.ui
 
-import android.R
 import android.app.Activity
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions

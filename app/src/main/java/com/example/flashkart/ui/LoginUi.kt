@@ -28,7 +28,6 @@ import com.google.firebase.FirebaseException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import androidx.compose.runtime.getValue
-import com.example.flashkart.ui.FlashViewModel
 
 @Composable
 fun LoginUi(flashViewModel: FlashViewModel){
@@ -40,11 +39,17 @@ fun LoginUi(flashViewModel: FlashViewModel){
     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+            flashViewModel.setLoading(false)
 
+            if (credential.smsCode != null) {
+                flashViewModel.setOtp(credential.smsCode!!)
+            }
+            signInWithPhoneAuthCredential(credential, context, flashViewModel)
         }
 
         override fun onVerificationFailed(e: FirebaseException) {
-
+            flashViewModel.setLoading(false)
+            Toast.makeText(context, "Verification Failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
 
         override fun onCodeSent(
@@ -52,7 +57,7 @@ fun LoginUi(flashViewModel: FlashViewModel){
             token: PhoneAuthProvider.ForceResendingToken,
         ) {
             flashViewModel.setVerificationId(verificationId)
-            Toast.makeText(context,"Success",Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "OTP Sent Successfully", Toast.LENGTH_SHORT).show()
             flashViewModel.resetTimer()
             flashViewModel.runTimer()
             flashViewModel.setLoading(false)
@@ -97,18 +102,15 @@ fun LoginUi(flashViewModel: FlashViewModel){
             }
         }
         if (loading) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-                    .background(
-                        color = _root_ide_package_.androidx.compose.ui.graphics.Color(
-                            255, 255, 255, 190
-                        )
-                    )
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .background(color = androidx.compose.ui.graphics.Color(0, 0, 0, 100)),
+                contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
-                Text(text = "Loading")
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = androidx.compose.ui.graphics.Color.White)
+                    Text(text = "Sending OTP...", color = androidx.compose.ui.graphics.Color.White)
+                }
             }
         }
     }

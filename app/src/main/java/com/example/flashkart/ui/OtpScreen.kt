@@ -32,7 +32,6 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 
 
-
 @Composable
 fun OtpScreen(otp:String,
               flashViewModel: FlashViewModel,
@@ -104,7 +103,7 @@ fun OtpTextBox(otp: String,
     }
 }
 
-private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential,
+fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential,
                                           context: Context,
                                           flashViewModel: FlashViewModel) {
     auth.signInWithCredential(credential)

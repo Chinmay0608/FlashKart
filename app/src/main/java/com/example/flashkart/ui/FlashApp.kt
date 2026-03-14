@@ -1,6 +1,5 @@
 package com.example.flashkart.ui
 
-import android.app.AlertDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -163,19 +162,19 @@ fun FlashApp(
                         }
                     )
                 }
-                if(logoutClicked){
-                    AlertCheck(
-                        onYesButtonPressed = {
-                            flashViewModel.setLogoutStatus(false)
-                            auth.signOut()
-                            flashViewModel.clearData()
-                        },
-                        onNoButtonPressed = {
-                            flashViewModel.setLogoutStatus(false)
-                        }
-                    )
-                }
             }
+        }
+        if(logoutClicked){
+            AlertCheck(
+                onYesButtonPressed = {
+                    flashViewModel.setLogoutStatus(true)
+                    auth.signOut()
+                    flashViewModel.clearData()
+                },
+                onNoButtonPressed = {
+                    flashViewModel.setLogoutStatus(false)
+                }
+            )
         }
     }
 }
@@ -244,25 +243,32 @@ fun FlashAppBar(navController: NavHostController,
 @Composable
 fun AlertCheck(
     onYesButtonPressed: () -> Unit,
-    onNoButtonPressed: () -> Unit
+    onNoButtonPressed: () -> Unit,
 ){
-    AlertDialog(title = {
-        Text(text = "Logout?", fontWeight = FontWeight.Bold)
+    AlertDialog(
+        title = {
+            Text(text = "Logout", fontWeight = FontWeight.Bold)
         },
         containerColor = Color.White,
         text = {
             Text(text = "Are you sure you want to logout?")
         },
         confirmButton = {
-            TextButton(onClick = {onYesButtonPressed}) {
+            TextButton(onClick = {
+                onYesButtonPressed()
+            }) {
                 Text(text = "Yes")
             }
         },
         dismissButton = {
-            TextButton (onClick = {onNoButtonPressed}) {
+            TextButton(onClick = {
+                onNoButtonPressed()
+            }){
                 Text(text = "No")
             }
-        }) {
-
-    }
+        },
+        onDismissRequest = {
+            onNoButtonPressed()
+        }
+    )
 }
