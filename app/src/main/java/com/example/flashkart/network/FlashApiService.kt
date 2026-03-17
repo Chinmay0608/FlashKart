@@ -7,25 +7,27 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import retrofit2.http.GET
 
-private const val BASE_URL = "https://training-uploads.internshala.com"
+private const val BASE_URL = "https://gist.githubusercontent.com/Chinmay0608/7305386ea8541f2ec857f8429ba41a3f/raw/"
+
+private val json = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+}
+
 private val retrofit = Retrofit.Builder()
-    .addConverterFactory(
-        Json.asConverterFactory(
-            "application/json".toMediaType()
-        )
-    )
     .baseUrl(BASE_URL)
+    .addConverterFactory(
+        json.asConverterFactory("application/json".toMediaType())
+    )
     .build()
 
-interface FlashApiService{
-    @GET("android/grocery_delivery_app/items.json")
+interface FlashApiService {
+    @GET("flash_items.json")
     suspend fun getItems(): List<InternetItem>
 }
 
-object FlashApi{
-    val retrofitService: FlashApiService by lazy{
-        retrofit.create(
-            FlashApiService::class.java
-        )
+object FlashApi {
+    val retrofitService: FlashApiService by lazy {
+        retrofit.create(FlashApiService::class.java)
     }
 }
