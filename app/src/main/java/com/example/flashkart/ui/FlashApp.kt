@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
@@ -39,7 +39,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.flashkart.data.InternetItem
+import com.example.flashkart.data.Item
 import com.google.firebase.auth.FirebaseAuth
 
 enum class FlashAppScreen(val title: String) {
@@ -122,7 +122,7 @@ fun FlashApp(
                         if (canNavigateBack) {
                             IconButton(onClick = { navController.navigateUp() }) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowBack, // Use the correct icon here
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back Button"
                                 )
                             }
@@ -182,7 +182,7 @@ fun FlashApp(
 @Composable
 fun FlashAppBar(navController: NavHostController,
                 currentScreen: FlashAppScreen ,
-                cartItems: List<InternetItem>) {
+                cartItems: List<Item>) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
