@@ -55,7 +55,7 @@ fun StartScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = Color(108,194,111,255)
                     ),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)
                 ){
                     Text(
                         text= "Shop by Category",

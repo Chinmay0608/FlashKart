@@ -16,15 +16,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -32,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.flashkart.R
-import com.example.flashkart.data.InternetItem
+import com.example.flashkart.data.Item
 import com.example.flashkart.data.InternetItemWithQuantity
 
 @Composable
@@ -40,12 +43,12 @@ fun CartScreen(
     flashViewModel: FlashViewModel,
     onHomeButtonClicked: () -> Unit){
     val cartItems by flashViewModel.cartItems.collectAsState()
-    val cartItemsWithQuantity = cartItems.groupBy { it }
-        .map {
-            (item, cartItems) ->
+    val cartItemsWithQuantity = cartItems
+        .groupBy { it.itemName }
+        .map { (name, items) ->
             InternetItemWithQuantity(
-                item ,
-                cartItems.size
+                items.first(),
+                items.size
             )
         }
     if(cartItems.isNotEmpty()){
@@ -79,7 +82,7 @@ fun CartScreen(
 
             item{
                 Card(colors = CardDefaults.cardColors(
-                    containerColor = _root_ide_package_.androidx.compose.ui.graphics.Color(236,236,236,255),
+                    containerColor = Color(236,236,236,255),
                 ),
                     modifier = Modifier.fillMaxWidth()
                 ){
@@ -87,7 +90,7 @@ fun CartScreen(
                         BillRow(itemName = "Item Total", itemPrice = totalPrice, fontWeight = FontWeight.Normal)
                         BillRow(itemName = "Handling Charge", itemPrice = handlingCharge, fontWeight = FontWeight.Light)
                         BillRow(itemName = "Delivery Fee", itemPrice = deliveryFee, fontWeight = FontWeight.Light)
-                        Divider(thickness = 1.dp, modifier = Modifier.padding(vertical = 5.dp), color = androidx.compose.ui.graphics.Color.LightGray)
+                        HorizontalDivider(thickness = 1.dp, modifier = Modifier.padding(vertical = 5.dp), color = Color.LightGray)
                         BillRow(itemName = "To Pay", itemPrice = grandTotal, fontWeight = FontWeight.ExtraBold)
 
                     }
@@ -103,7 +106,7 @@ fun CartScreen(
                 contentDescription = "App Icon",
                 modifier  =Modifier.size(70.dp)
             )
-            Text(text = "Ypur Cart is Empty",
+            Text(text = "Your Cart is Empty",
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(20.dp)
             )
@@ -120,28 +123,40 @@ fun CartScreen(
 
 @Composable
 fun CartCard(
-    cartItem:InternetItem,
+    cartItem: Item,
     flashViewModel: FlashViewModel,
     cartItemWithQuantity: Int ){
     Row(
         modifier = Modifier.fillMaxWidth().height(80.dp),
         verticalAlignment = Alignment.CenterVertically
     ){
-        AsyncImage(model = cartItem.imageUrl,
-            contentDescription = "Item image",
-            modifier = Modifier.fillMaxHeight()
-                .padding(start = 5.dp)
-                .weight(4f)
-        )
+        
+        if (cartItem.imageUrl != null) {
+            AsyncImage(
+                model = cartItem.imageUrl,
+                contentDescription = cartItem.itemName,
+                modifier = Modifier.fillMaxHeight().padding(start = 5.dp).weight(4f),
+                contentScale = ContentScale.Fit,
+                error = painterResource(R.drawable.error),
+                placeholder = painterResource(R.drawable.loading)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = if (cartItem.imageResourceId != 0) cartItem.imageResourceId else R.drawable.flashkart),
+                contentDescription = "Item image",
+                modifier = Modifier.fillMaxHeight().padding(start = 5.dp).weight(4f)
+            )
+        }
+        
         Column(
             modifier = Modifier.padding(horizontal = 5.dp)
                 .fillMaxHeight()
                 .weight(4f),
             verticalArrangement = Arrangement.SpaceEvenly){
-           Text(text = cartItem.itemName,
+           Text(text = if(cartItem.stringResourceId != 0) stringResource(id = cartItem.stringResourceId) else cartItem.itemName ?: "Item",
                fontSize = 16.sp,
                maxLines = 1)
-            Text(text = cartItem.itemQuantity,
+            Text(text = cartItem.itemQuantityId,
                 fontSize = 14.sp,
                 maxLines = 1)
         }
@@ -154,12 +169,12 @@ fun CartCard(
             Text(text = "Rs. ${cartItem.itemPrice}",
                 fontSize = 12.sp,
                 maxLines = 1,
-                color = androidx.compose.ui.graphics.Color.Gray,
+                color = Color.Gray,
                 textDecoration = TextDecoration.LineThrough)
             Text(text = "Rs. ${cartItem.itemPrice * 75/100}",
                 fontSize = 18.sp,
                 maxLines = 1,
-                color = _root_ide_package_.androidx.compose.ui.graphics.Color(254,116,105,255))
+                color = Color(254,116,105,255))
         }
         Column(
             modifier = Modifier.fillMaxWidth().weight(3f),
@@ -174,11 +189,11 @@ fun CartCard(
             }
                 .fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = _root_ide_package_.androidx.compose.ui.graphics.Color(254,116,105,255)
+                    containerColor = Color(254,116,105,255)
                 )) {
                 Text(
                     text = "Remove",
-                    color = androidx.compose.ui.graphics.Color.White,
+                    color = Color.White,
                     fontSize = 11.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)

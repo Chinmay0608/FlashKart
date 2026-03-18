@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.flashkart.R
 import com.example.flashkart.data.InternetItem
+import com.example.flashkart.data.Item
 
 @Composable
 fun ItemsScreen(flashViewModel: FlashViewModel,
@@ -47,7 +49,7 @@ fun ItemsScreen(flashViewModel: FlashViewModel,
     val flashUiState by flashViewModel.uiState.collectAsState()
     val selectedCategory = stringResource(id = flashUiState.selectedCategory)
     val database = items.filter{
-        it.itemCategory.lowercase() == selectedCategory.lowercase()
+        it.itemCategoryId.lowercase() == selectedCategory.lowercase()
     }
     LazyVerticalGrid(columns = GridCells.Adaptive(150.dp),
         contentPadding = PaddingValues(10.dp),
@@ -78,10 +80,7 @@ fun ItemsScreen(flashViewModel: FlashViewModel,
         }
         items(database){
             ItemCard(
-                stringResourceId = it.itemName,
-                imageResourceId = it.imageUrl,
-                itemQuantity = it.itemQuantity,
-                itemPrice = it.itemPrice,
+                item = it,
                 flashViewModel = flashViewModel)
         }
     }
@@ -104,10 +103,7 @@ fun InternetItemsScreen(flashViewModel: FlashViewModel, itemUiState: FlashViewMo
 
 @Composable
 fun ItemCard(
-    stringResourceId: String,
-    imageResourceId: String,
-    itemQuantity: String,
-    itemPrice: Int,
+    item: InternetItem,
     flashViewModel: FlashViewModel
 ) {
     val context = LocalContext.current
@@ -118,9 +114,12 @@ fun ItemCard(
         ){
             Box {
                 AsyncImage(
-                    model = imageResourceId,
-                    contentDescription =stringResourceId,
-                    modifier = Modifier.fillMaxWidth().height(150.dp)
+                    model = item.imageUrl,
+                    contentDescription = item.itemName,
+                    modifier = Modifier.fillMaxWidth().height(150.dp),
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.error),
+                    placeholder = painterResource(R.drawable.loading)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -145,7 +144,7 @@ fun ItemCard(
                 }
             }
         }
-        Text(text = stringResourceId,
+        Text(text = item.itemName,
             fontSize = 14.sp,
             modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
             maxLines = 1,
@@ -158,7 +157,7 @@ fun ItemCard(
         ) {
             Column {
                 Text(
-                    text = "Rs. $itemPrice",
+                    text = "Rs. ${item.itemPrice}",
                     fontSize = 12.sp,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
@@ -166,7 +165,7 @@ fun ItemCard(
                     textDecoration = TextDecoration.LineThrough
                 )
                 Text(
-                    text = "Rs. ${itemPrice * 75 / 100}",
+                    text = "Rs. ${item.itemPrice * 75 / 100}",
                     fontSize = 14.sp,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
@@ -174,7 +173,7 @@ fun ItemCard(
                 )
             }
             Text(
-                text = itemQuantity.toString(),
+                text = item.itemQuantity,
                 fontSize = 14.sp,
                 maxLines = 1,
                 color = Color(114, 114, 114,255)
@@ -185,13 +184,12 @@ fun ItemCard(
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally)
                 .clickable {
-                    flashViewModel.addToDatabase(
-                        InternetItem(
-                            itemName = stringResourceId,
-                            imageUrl = imageResourceId,
-                            itemQuantity = itemQuantity,
-                            itemPrice = itemPrice,
-                            itemCategory = ""
+                    flashViewModel.addToCart(
+                        Item(
+                            itemName = item.itemName,
+                            itemPrice = item.itemPrice,
+                            itemQuantityId = item.itemQuantity,
+                            imageUrl = item.imageUrl
                         )
                     )
                     Toast
@@ -199,7 +197,7 @@ fun ItemCard(
                         .show()
                 },
             colors = CardDefaults.cardColors(
-                containerColor = Color(108, 194, 111,255)
+                containerColor = Color(108, 194, 111, 255)
             )
         ) {
             Row(
@@ -214,7 +212,8 @@ fun ItemCard(
                     text = "Add to Cart",
                     fontSize = 11.sp,
                     color = Color.White,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -223,7 +222,7 @@ fun ItemCard(
 
 @Composable
 fun LoadingScreen(){
-    Box(contentAlignment = Alignment.Center,modifier =Modifier.fillMaxWidth() ) {
+    Box(contentAlignment = Alignment.Center,modifier =Modifier.fillMaxSize() ) {
         Image(painter = painterResource(id = R.drawable.loading), contentDescription = "Loading")
     }
 }

@@ -48,7 +48,7 @@ fun OtpScreen(otp:String,
             Toast.makeText(context,"Please enter OTP", Toast.LENGTH_SHORT).show()
     }
         else{
-            val credential = PhoneAuthProvider.getCredential(verificationId.toString(), otp)
+            val credential = PhoneAuthProvider.getCredential(verificationId, otp)
             signInWithPhoneAuthCredential(credential = credential,
                 context = context,
                 flashViewModel = flashViewModel)
@@ -109,19 +109,16 @@ fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential,
     auth.signInWithCredential(credential)
         .addOnCompleteListener(context as Activity) { task ->
             if (task.isSuccessful) {
-                // Sign in success, update UI with the signed-in user's information
                 Toast.makeText(context,"Verification Successful",Toast.LENGTH_SHORT).show()
                 val user = task.result?.user
                 if (user != null) {
                     flashViewModel.setUser(user)
                 }
             } else {
-                // Sign in failed, display a message and update the UI
                 if (task.exception is FirebaseAuthInvalidCredentialsException) {
-                    // The verification code entered was invalid
-                    Toast.makeText(context,"Wrong Otp Entered",Toast.LENGTH_SHORT).show()
+
+                    Toast.makeText(context, "Wrong Otp Entered", Toast.LENGTH_SHORT).show()
                 }
-                // Update UI
             }
         }
     }

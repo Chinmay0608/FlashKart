@@ -1,5 +1,6 @@
-package     com.example.flashkart.ui
+package com.example.flashkart.ui
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -13,16 +14,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.flashkart.data.InternetItem
+import com.example.flashkart.data.Item
 import com.example.flashkart.network.FlashApi
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import kotlinx.coroutines.Job
 
 class FlashViewModel: ViewModel(){
+    private val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+
     private val _uiState = MutableStateFlow(FlashUiState())
     val uiState: StateFlow<FlashUiState> = _uiState.asStateFlow()
 
@@ -38,8 +43,8 @@ class FlashViewModel: ViewModel(){
     private val _phoneNumber = MutableStateFlow("")
     val phoneNumber: MutableStateFlow<String> get() = _phoneNumber
 
-    private val _cartItems = MutableStateFlow<List<InternetItem>>(emptyList())
-    val cartItems: StateFlow<List<InternetItem>> get() = _cartItems.asStateFlow()
+    private val _cartItems = MutableStateFlow<List<Item>>(emptyList())
+    val cartItems: StateFlow<List<Item>> get() = _cartItems.asStateFlow()
 
     private val _otp = MutableStateFlow("")
     val otp: MutableStateFlow<String> get() = _otp
@@ -51,7 +56,8 @@ class FlashViewModel: ViewModel(){
     val ticks: MutableStateFlow<Long> get() = _ticks
 
     private val database = Firebase.database
-    private val myRef = database.getReference("users/${auth.currentUser?.uid}/cart")
+    private var myRef: DatabaseReference? = null
+    private var cartListener: ValueEventListener? = null
 
     private lateinit var timerJob: Job
 
@@ -61,7 +67,6 @@ class FlashViewModel: ViewModel(){
     private val _logoutClicked = MutableStateFlow(false)
     val logoutClicked: MutableStateFlow<Boolean> get() = _logoutClicked
 
-    private lateinit var internetJob: Job
     private var screenJob: Job
 
     sealed interface ItemUiState {
@@ -83,14 +88,54 @@ class FlashViewModel: ViewModel(){
     }
 
     fun setUser(user: FirebaseUser?){
-        _user.value = user
+        if (_user.value?.uid != user?.uid) {
+            _user.value = user
+            if (user != null) {
+                setupCartListener(user.uid)
+            } else {
+                removeCartListener()
+            }
+        }
+    }
+
+    private fun setupCartListener(uid: String) {
+        removeCartListener()
+        val newRef = database.getReference("users/$uid/cart")
+        myRef = newRef
+        cartListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                Log.d("CART", "Cart data changed! Snapshot has ${dataSnapshot.childrenCount} children")
+                val items = mutableListOf<Item>()
+                for (childSnapshot in dataSnapshot.children){
+                    try {
+                        val item = childSnapshot.getValue(Item::class.java)
+                        item?.let { items.add(it) }
+                    } catch (e: Exception) {
+                        Log.e("CART", "Failed to parse item", e)
+                    }
+                }
+                _cartItems.value = items
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("CART", "DatabaseError: ${error.message}", error.toException())
+            }
+        }
+        newRef.addValueEventListener(cartListener!!)
+    }
+
+    private fun removeCartListener() {
+        cartListener?.let { myRef?.removeEventListener(it) }
+        myRef = null
+        cartListener = null
+        _cartItems.value = emptyList()
     }
 
     fun clearData(){
         _user.value = null
         _phoneNumber.value = ""
         _otp.value = ""
-        verificationId.value = ""
+        _verificationId.value = ""
+        removeCartListener()
         resetTimer()
     }
 
@@ -121,18 +166,31 @@ class FlashViewModel: ViewModel(){
         }
     }
 
-    fun addToCart(item: InternetItem) {
-        _cartItems.value = _cartItems.value + item
+    fun addToCart(item: Item) {
+        Log.d("CART", "AddToCart called: ${item.itemName}")
+        if (myRef == null) {
+            Log.e("CART", "Failed to add: User not logged in or database reference null")
+            return
+        }
+        myRef?.push()?.setValue(item)
+            ?.addOnSuccessListener {
+                Log.d("CART", "Successfully added to cart: ${item.itemName}")
+            }
+            ?.addOnFailureListener { e ->
+                Log.e("CART", "Failed to add to cart: ${e.message}", e)
+            }
     }
 
-    fun removeFromCart(oldItem: InternetItem) {
-        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    fun removeFromCart(oldItem: Item) {
+        myRef?.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 for (childSnapshot in dataSnapshot.children) {
                     var itemRemoved = false
-                    val item = childSnapshot.getValue(InternetItem::class.java)
+                    val item = childSnapshot.getValue(Item::class.java)
                     item?.let {
-                        if (oldItem.itemName == it.itemName && oldItem.itemPrice == it.itemPrice) {
+                        if (oldItem.itemName == it.itemName &&
+                            oldItem.itemQuantityId == it.itemQuantityId
+                        ) {
                             childSnapshot.ref.removeValue()
                             itemRemoved = true
                         }
@@ -142,34 +200,10 @@ class FlashViewModel: ViewModel(){
             }
 
             override fun onCancelled(error: DatabaseError) {
-
+                Log.e("CART", "DatabaseError: ${error.message}", error.toException())
             }
         })
     }
-
-    fun addToDatabase(item : InternetItem){
-        myRef.push().setValue(item)
-    }
-
-    private fun filledCartItems(){
-        // Read from the database
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                _cartItems.value = emptyList()
-                for (childSnapshot in dataSnapshot.children){
-                    val item = childSnapshot.getValue(InternetItem::class.java)
-                    item?.let{
-                        val newItem = it
-                        addToCart(newItem)
-                    }
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-        })
-    }
-
 
     fun updateClickText(updatedText: String) {
         _uiState.update {
@@ -179,37 +213,47 @@ class FlashViewModel: ViewModel(){
         }
     }
 
-        fun updateSelectedCategory(updatedCategory: Int) {
-            _uiState.update {
-                it.copy(
-                    selectedCategory = updatedCategory
-                )
-            }
-        }
-
-        private fun toggleVisibility() {
-            _isVisible.value = false
-        }
-
-        fun getFlashItems() {
-            internetJob = viewModelScope.launch {
-                try {
-                    val listResult = FlashApi.retrofitService.getItems()
-                    itemUiState = ItemUiState.Success(listResult)
-                } catch (_: Exception) {
-                    itemUiState = ItemUiState.Error
-                    toggleVisibility()
-                    screenJob.cancel()
-                }
-            }
-        }
-
-        init {
-            screenJob = viewModelScope.launch(Dispatchers.Default) {
-                delay(3000)
-                toggleVisibility()
-            }
-            getFlashItems()
-            filledCartItems()
+    fun updateSelectedCategory(updatedCategory: Int) {
+        _uiState.update {
+            it.copy(
+                selectedCategory = updatedCategory
+            )
         }
     }
+
+    private fun toggleVisibility() {
+        _isVisible.value = false
+    }
+
+    fun getFlashItems() {
+        itemUiState = ItemUiState.Loading
+
+        viewModelScope.launch {
+            try {
+                val items = FlashApi.retrofitService.getItems()
+
+                itemUiState = ItemUiState.Success(items)
+
+            } catch (e: Exception) {
+                itemUiState = ItemUiState.Error
+                toggleVisibility()
+                screenJob.cancel()
+            }
+        }
+    }
+
+    init {
+        try {
+            Firebase.database.setPersistenceEnabled(true)
+        } catch (e: Exception) {
+            Log.e("CART", "Persistence already enabled")
+        }
+        
+        screenJob = viewModelScope.launch(Dispatchers.Default) {
+            delay(3000)
+            toggleVisibility()
+        }
+        getFlashItems()
+        auth.currentUser?.let { setUser(it) }
+    }
+}
